@@ -5,6 +5,7 @@
  */
 
 #include <blk.h>
+#include <bootdev.h>
 #include <blkmap.h>
 #include <dm.h>
 #include <malloc.h>
@@ -398,6 +399,23 @@ U_BOOT_DRIVER(blkmap_blk) = {
 	.ops		= &blkmap_blk_ops,
 };
 
+#if CONFIG_IS_ENABLED(BOOTSTD)
+static int blkmap_bootdev_bind(struct udevice *dev)
+{
+	struct bootdev_uc_plat *ucp = dev_get_uclass_plat(dev);
+
+	ucp->prio = BOOTDEVP_4_SCAN_FAST;
+
+	return 0;
+}
+
+U_BOOT_DRIVER(blkmap_bootdev) = {
+	.name		= "blkmap_bootdev",
+	.id		= UCLASS_BOOTDEV,
+	.bind		= blkmap_bootdev_bind,
+};
+#endif
+
 static int blkmap_dev_bind(struct udevice *dev)
 {
 	struct blkmap *bm = dev_get_plat(dev);
@@ -421,6 +439,10 @@ static int blkmap_dev_bind(struct udevice *dev)
 	 * mapping.
 	 */
 	bd->lba = 1;
+
+	err = bootdev_setup_for_sibling_blk(bm->blk, "blkmap_bootdev");
+	if (err)
+		return log_msg_ret("bootdev", err);
 
 	return 0;
 }
