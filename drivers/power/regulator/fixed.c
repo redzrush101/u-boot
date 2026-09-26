@@ -77,7 +77,25 @@ static int fixed_regulator_get_enable(struct udevice *dev)
 
 static int fixed_regulator_set_enable(struct udevice *dev, bool enable)
 {
-	return regulator_common_set_enable(dev, dev_get_plat(dev), enable);
+	struct udevice *vin;
+	int ret;
+
+	/* The input supply goes on before the switch and off after it. */
+	if (device_get_supply_regulator(dev, "vin-supply", &vin))
+		vin = NULL;
+
+	if (enable && vin) {
+		ret = regulator_set_enable_if_allowed(vin, true);
+		if (ret)
+			return ret;
+	}
+
+	ret = regulator_common_set_enable(dev, dev_get_plat(dev), enable);
+
+	if (!enable && vin && !ret)
+		regulator_set_enable_if_allowed(vin, false);
+
+	return ret;
 }
 
 static int fixed_clock_regulator_get_enable(struct udevice *dev)
