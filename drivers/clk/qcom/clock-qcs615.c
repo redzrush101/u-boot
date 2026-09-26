@@ -19,6 +19,8 @@
 #define USB30_PRIM_MASTER_CLK_CMD_RCGR		0xf01c
 #define USB3_PRIM_PHY_AUX_CMD_RCGR		0xf060
 
+#define SDCC2_APPS_CLK_CMD_RCGR			0x1400c
+
 #define UFS_PHY_AXI_CLK_CMD_RCGR		0x77020
 #define UFS_PHY_ICE_CORE_CLK_CMD_RCGR		0x77048
 #define UFS_PHY_UNIPRO_CORE_CLK_CMD_RCGR	0x77060
@@ -37,6 +39,16 @@
 #define GCC_QUPV3_WRAP1_S3_CLK_ENA_BIT BIT(25)
 #define GCC_QUPV3_WRAP1_S4_CLK_ENA_BIT BIT(26)
 #define GCC_QUPV3_WRAP1_S5_CLK_ENA_BIT BIT(27)
+
+/* SDCC2 APPS clock frequency table (without the GPLL8 202 MHz level) */
+static const struct freq_tbl ftbl_gcc_sdcc2_apps_clk_src[] = {
+	F(400000, CFG_CLK_SRC_CXO, 12, 1, 4),
+	F(19200000, CFG_CLK_SRC_CXO, 1, 0, 0),
+	F(25000000, CFG_CLK_SRC_GPLL0_EVEN, 12, 0, 0),
+	F(50000000, CFG_CLK_SRC_GPLL0_EVEN, 6, 0, 0),
+	F(100000000, CFG_CLK_SRC_GPLL0_EVEN, 3, 0, 0),
+	{ }
+};
 
 /* UFS PHY AXI clock frequency table */
 static const struct freq_tbl ftbl_gcc_ufs_phy_axi_clk_src[] = {
@@ -85,6 +97,11 @@ static ulong qcs615_set_rate(struct clk *clk, ulong rate)
 				     5, 0, 0, CFG_CLK_SRC_GPLL0, 8);
 		clk_rcg_set_rate(priv->base, USB3_PRIM_PHY_AUX_CMD_RCGR, 0, 0);
 		return rate;
+	case GCC_SDCC2_APPS_CLK:
+		freq = qcom_find_freq(ftbl_gcc_sdcc2_apps_clk_src, rate);
+		clk_rcg_set_rate_mnd(priv->base, SDCC2_APPS_CLK_CMD_RCGR,
+				     freq->pre_div, freq->m, freq->n, freq->src, 8);
+		return freq->freq;
 	case GCC_UFS_PHY_AXI_CLK:
 		freq = qcom_find_freq(ftbl_gcc_ufs_phy_axi_clk_src, rate);
 		clk_rcg_set_rate_mnd(priv->base, UFS_PHY_AXI_CLK_CMD_RCGR,
@@ -133,6 +150,8 @@ static const struct gate_clk qcs615_clks[] = {
 	GATE_CLK(GCC_QUPV3_WRAP1_S5_CLK, 0x5200c, GCC_QUPV3_WRAP1_S5_CLK_ENA_BIT),
 	GATE_CLK(GCC_DISP_HF_AXI_CLK, 0xb038, BIT(0)),
 	GATE_CLK(GCC_DISP_AHB_CLK, 0xb032, BIT(0)),
+	GATE_CLK(GCC_SDCC2_AHB_CLK, 0x14008, BIT(0)),
+	GATE_CLK(GCC_SDCC2_APPS_CLK, 0x14004, BIT(0)),
 	/* UFS clocks */
 	GATE_CLK(GCC_UFS_PHY_AXI_CLK, 0x77010, BIT(0)),
 	GATE_CLK(GCC_AGGRE_UFS_PHY_AXI_CLK, 0x770c0, BIT(0)),
