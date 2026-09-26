@@ -69,6 +69,25 @@ The DTB is called "sdm845-samsung-starqltechn.dtb"
 
 More information can be found on the `Samsung S9 page`_.
 
+Samsung Galaxy A70 (a70q)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Galaxy A70 (SM-A705) is a phone based on the Qualcomm SM6150 SoC.
+
+Use the following commands::
+
+	make CROSS_COMPILE=aarch64-linux-gnu- O=.output qcom_defconfig qcom-phone.config samsung-a70q.config
+
+Append "sm6150-samsung-a70q.dtb" and pack a version 1 boot image with a
+4096 byte page size, base 0, kernel offset 0x8000, ramdisk offset 0x2000000,
+tags offset 0x1e00000 and board name "SRPRL06C005" (a one byte ramdisk is
+fine). Flash it to the boot partition.
+
+Standard boot scans the microSD card, then an OS disk image written into the
+userdata partition (postmarketOS installs one there, exposed with blkmap),
+then UFS. Hold Volume Down while U-Boot starts for the boot menu, which also
+offers fastboot on UFS LUN 0 and USB mass storage.
+
 dragonboard845c
 ^^^^^^^^^^^^^^^
 
